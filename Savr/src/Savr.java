@@ -3,6 +3,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Basic tabbed interface for Savr Finance App
@@ -10,9 +12,15 @@ import java.time.LocalDate;
 public class Savr extends JFrame {
     // Main components
     private JTabbedPane tabbedPane;
+    private JButton addButton;
     private JPanel addTransactionPanel;
     private JPanel viewTransactionsPanel;
     private JPanel graphsPanel;
+    private JTextField amountField;
+    private JTextField dateField;
+    private JComboBox categoryField;
+    private JComboBox paymentField;
+    private JComboBox typeField;
 
     // Database manager reference
     private DatabaseManager dbManager;
@@ -63,21 +71,40 @@ public class Savr extends JFrame {
 
         // Add form components
         formPanel.add(new JLabel("Amount:"));
-        formPanel.add(new JTextField());
+        amountField = new JTextField();
+        formPanel.add(amountField);
 
         formPanel.add(new JLabel("Date:"));
-        formPanel.add(new JTextField(LocalDate.now().toString()));
+        dateField = new JTextField(LocalDate.now().toString());
+        formPanel.add(dateField);
 
         formPanel.add(new JLabel("Category:"));
-        formPanel.add(new JComboBox<>(new String[]{"Food", "Transport", "Housing", "Other"}));
+        categoryField = new JComboBox<>(new String[]{"Food", "Entertainment", "Housing", "Transportation", "Savings", "Other"});
+        formPanel.add(categoryField);
 
         formPanel.add(new JLabel("Payment Method:"));
-        formPanel.add(new JComboBox<>(new String[]{"Cash", "Credit Card", "Debit Card"}));
+        paymentField = new JComboBox<>(new String[]{"Cash", "Credit Card", "Debit Card"});
+        formPanel.add(paymentField);
 
         formPanel.add(new JLabel("Type:"));
-        formPanel.add(new JComboBox<>(new String[]{"Expense", "Income"}));
+        typeField = new JComboBox<>(new String[]{"Expense", "Income"});
+        formPanel.add(typeField);
 
-        JButton addButton = new JButton("Add Transaction");
+        addButton = new JButton("Add Transaction");
+
+        addButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                double amount = Double.parseDouble(amountField.getText());
+                LocalDate date = LocalDate.parse(dateField.getText());
+                String category = categoryField.getSelectedItem().toString();
+                String payment = paymentField.getSelectedItem().toString();
+                boolean isIncome = typeField.getSelectedItem().toString().equals("Income");
+
+                dbManager.addTransaction(amount, date, category, payment, isIncome, false);
+                System.out.println("Added transaction!");
+            }
+        });
 
         // Add components to panel
         addTransactionPanel.add(new JLabel("Add Transaction", SwingConstants.CENTER), BorderLayout.NORTH);
@@ -93,8 +120,10 @@ public class Savr extends JFrame {
 
         // Create simple table
         String[] columns = {"ID", "Date", "Amount", "Category", "Type"};
-        DefaultTableModel model = new DefaultTableModel(columns, 0);
-        JTable table = new JTable(model);
+        ArrayList<Transaction> transactions = (ArrayList<Transaction>) dbManager.getAllTransactions();
+        //DefaultTableModel model = new DefaultTableModel(columns, transactions.size());
+        
+        JTable table = new JTable();
         JScrollPane scrollPane = new JScrollPane(table);
 
         // Add filter panel
